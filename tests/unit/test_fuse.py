@@ -59,8 +59,25 @@ def test_equivalence_fusion_point(out_f, in_f):
     got = (rmsnorm(x, ones,  eps) @ W_prime.float().T + b.float()).squeeze()
 
     cs = F.cosine_similarity(ref.unsqueeze(0), got.unsqueeze(0)).item()
+    max_abs = (ref - got).abs().max().item()
+    # max|abs diff| logged for the record (test_log.md), NOT a gate
+    print(f"\n  [{out_f}x{in_f}] cos_sim={cs:.8f}  max|abs diff|={max_abs:.4f}")
     assert cs >= 0.9999, \
         f"cos_sim={cs:.6f} < 0.9999 for out_f={out_f} in_f={in_f}"
+
+
+# ---------------------------------------------------------------- test 1b: gate-counter negative test
+
+def test_assert_counters_fails_on_mismatch():
+    """assert_counters must exit nonzero when a counter is wrong."""
+    bad = dict(EXPECTED)
+    bad["bf16_transformed"] = EXPECTED["bf16_transformed"] - 1  # deliberately wrong
+    with pytest.raises(SystemExit) as exc_info:
+        assert_counters(bad)
+    assert exc_info.value.code == 1, "expected exit code 1 on counter mismatch"
+
+    # Sanity: correct counters must NOT raise
+    assert_counters(dict(EXPECTED))
 
 
 # ---------------------------------------------------------------- test 2: bias bit-identical

@@ -50,7 +50,9 @@ Architecture decisions log: `DECISIONS.md` — append, never rewrite history.
 ## Phase status (update as you go)
 
 - [x] Phase 1: provision + `inspect_model.py` run + reconcile vs plan.md
-- [x] Phase 2: `src/fuse.py` port + unit tests + fused checkpoint upload
+- [ ] Phase 2: `src/fuse.py` port + unit tests + fused checkpoint upload
+      (code + 7/7 tests + verify_fused.py DONE; real transform + upload
+      BLOCKED on local disk — see DECISIONS.md 2026-06-10 blocker entry)
 - [ ] Phase 3: correctness (cos sim / max|Δ| / KL + small eval)
 - [ ] Phase 4: vLLM — control / Stage A / Stage B benchmark matrix
 - [ ] Phase 5: SGLang — same matrix

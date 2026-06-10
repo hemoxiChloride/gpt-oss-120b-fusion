@@ -70,3 +70,29 @@ Full output saved in `inspect_report.md`. **Zero mismatches — no plan rewrites
 3. **Router and expert biases** (`mlp.experts.gate_up_proj_bias`, `down_proj_bias`) exist. Not in scope for v1 — do not touch.
 4. **dtype histogram:** 543 BF16, 144 U8 (all U8 are expert blocks/scales — confirms clean precision split).
 5. **Total tensors:** 687 across 15 safetensors shards.
+
+---
+
+## 2026-06-10 — Phase 2: real transform BLOCKED on local disk; code+tests complete
+
+State at block:
+- `src/fuse.py` + 7/7 unit tests green (incl. gate-counter negative test,
+  max|abs diff| logged alongside cos_sim — see test_log.md).
+- `src/verify_fused.py` written and validated on a synthetic orig/fused pair
+  (9/9 checks) plus a negative run (unfused-as-fused → 4 FAILs, exit 1).
+
+Blocker: MacBook Air has **24 GB free**; the disk gate requires **≥150 GB**
+(63 GB input + 63 GB output + headroom). The 63 GB download alone does not
+fit. Download NOT started; nothing deleted; no upload performed.
+
+Options (decision needed):
+1. **Run the transform on the cloud GPU box** (H100 instance — already the
+   plan-of-record dev loop "push → pull on GPU instance → test"; disk is
+   cheap there, and Phase 3 logit comparison needs the box anyway). fuse.py
+   is CPU-only, so this costs only disk + a few minutes of instance time.
+2. External SSD on the Mac (≥150 GB), keep everything local.
+3. Free ~130 GB on the Mac (unrealistic).
+
+Recommendation: option 1 — fold the transform into the Phase 3 GPU session:
+download original → fuse → verify_fused.py → upload `hchitte/gpt-oss-120b-fused`
+(private) → logit correctness, all on the instance.
