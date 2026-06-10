@@ -79,10 +79,11 @@ def main() -> int:
     # ------------------------------------------------- 2. safetensors headers
     print("Fetching safetensors metadata (headers only)...", file=sys.stderr)
     meta = get_safetensors_metadata(args.repo)
-    tensors = {name: (info.shape, info.dtype)
-               for name, info in meta.weight_map_metadata().items()} \
-        if hasattr(meta, "weight_map_metadata") else \
-        {name: (info.shape, info.dtype) for name, info in meta.tensors.items()}
+    # Build name -> (shape, dtype) from weight_map + files_metadata
+    tensors: dict = {}
+    for tname, fname in meta.weight_map.items():
+        info = meta.files_metadata[fname].tensors[tname]
+        tensors[tname] = (info.shape, info.dtype)
 
     lines.append(f"\n## 2. Tensor inventory — {len(tensors)} tensors\n")
     dtype_counts = Counter(dt for _, dt in tensors.values())
