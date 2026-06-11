@@ -96,3 +96,81 @@ Options (decision needed):
 Recommendation: option 1 — fold the transform into the Phase 3 GPU session:
 download original → fuse → verify_fused.py → upload `hchitte/gpt-oss-120b-fused`
 (private) → logit correctness, all on the instance.
+
+---
+
+## 2026-06-10 — Phase 2 deviation: real transform moved to the cloud instance (Option 1 APPROVED)
+
+Decision (Hemakshi): the real 120B transform moves from the local box to the
+cloud instance because the local disk gate failed (~24 GB free vs ≥150 GB
+required; logged as [BLOCKED] in src/test_log.md). Download, `src/fuse.py`,
+`src/verify_fused.py`, and the HF upload all run on the instance.
+
+- No GPU needed for the transform itself — CPU + disk only. Benchmarking is
+  still a later phase.
+- Runbook with exact commands: `scripts/phase2_cloud_runbook.md`.
+- Gate unchanged: counters must print exactly 109/37/36/0 — any deviation:
+  stop, report, delete nothing. Upload to `hchitte/gpt-oss-120b-fused`
+  (PRIVATE) only on full pass of verify_fused.py.
+- Precondition: HF token with WRITE access on the box (`hf auth login` or
+  `HF_TOKEN`) BEFORE starting the 63 GB download, so the run doesn't stall
+  at the upload step.
+
+---
+
+## 2026-06-10 — Plan update: BF16 upcast + both GPUs (plan_vllm.md / plan_sglang.md supersede plan.md)
+
+Two changes introduced. Old entries above remain as historical record.
+
+### Change 1 — Source checkpoint for the transform (supersedes 2026-06-10 blocker entry)
+
+- **Old plan:** `openai/gpt-oss-120b` (MXFP4, ~63 GB) used as fuse.py input.
+- **New plan:** `unsloth/gpt-oss-120b-BF16` (~234 GB, fully BF16 upcast) is the
+  source for the weight transform and kernel benchmark. The serving benchmark
+  uses `openai/gpt-oss-120b` ("MXFP4 + BF16-path fusion applied", ~63 GB,
+  fits single H100).
+- **Why:** full BF16 upcast gives complete fusion scope for the kernel
+  microbenchmark (all expert weights are BF16, no MXFP4 copy-through needed).
+  Serving still uses the compact MXFP4 checkpoint for realistic H100 fit.
+- **fuse.py impact:** algorithm unchanged. When run against the BF16 upcast
+  there are no `_blocks`/`_scales` tensors, so the MXFP4 copy-through branches
+  are simply never hit. Gate counters remain 109/37/36/0.
+- **New disk gate:** ≥600 GB on the Vast.ai instance (234 GB in + 234 GB out +
+  headroom). Old gate was ≥150 GB — obsolete for the BF16 path.
+- **Precondition on instance:** `hf_transfer` enabled for the 234 GB download
+  (`HF_HUB_ENABLE_HF_TRANSFER=1`); HF token with READ access on `unsloth` and
+  WRITE access on `hchitte`.
+
+### Change 2 — Hardware: both H100 and A100, always separate
+
+- **Old plan:** H100 primary, A100 fallback — run one, skip the other.
+- **New plan:** run and report on **both** H100 80GB and A100 80GB (Vast.ai
+  team subscription). Results in separate tables always — never mixed.
+- **Why:** plan_vllm.md and plan_sglang.md both explicitly require both GPUs
+  and note that A100/SM80 routes MXFP4 through Marlin dequant (different
+  kernel path from H100/SM90 native FP4) — a distinct data point worth
+  reporting.
+
+### Change 3 — Experimental protocol: 4-step replaces Stage A/B
+
+- **Old plan:** Stage A (drop-in checkpoint) / Stage B (weight-free norm patch).
+- **New plan:** 4-step protocol:
+  (1) vanilla baseline — unfused, HF transformers (ground truth, no engine)
+  (2) algorithm on vanilla — fused, HF transformers (isolate algorithm delta)
+  (3) engine on vanilla — unfused, vLLM or SGLang (engine baseline)
+  (4) engine + algorithm — fused, vLLM or SGLang (treatment)
+  Steps 1–2 shared across vLLM and SGLang — run once, reused.
+- **Why:** cleaner attribution of algorithm vs engine deltas. Stage A ≈ step 2,
+  Stage B ≈ step 4 — semantics preserved, framing clarified.
+
+### Change 4 — Kernel benchmark added before serving
+
+- Itamar's `benchmark_rmsnorm_linear_fusion.py` runs on both H100 and A100
+  before the serving benchmark. Do not modify the script; report raw CSV.
+  This replaces the layer-level TorchAO microbenchmark reference in the
+  old plan.
+
+### What did NOT change
+
+Fusion scope, gate counters (109/37/36/0), fuse.py algorithm, verify_fused.py,
+all existing unit tests, correctness gate (cos_sim ≥ 0.999, KL ≈ 0).

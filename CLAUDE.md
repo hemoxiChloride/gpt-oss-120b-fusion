@@ -5,11 +5,15 @@ Context file for Claude Code sessions. Read fully before editing anything.
 ## Project
 
 Apply Runara's RMSNorm + Linear fusion (offline gamma absorption, W' = W × γ)
-to `openai/gpt-oss-120b`, then benchmark fused vs unfused at the **serving
-level** on **vLLM** (Workstream A) and **SGLang** (Workstream B).
-**vLLM serving the unfused model is the control. Our fusion is the treatment.**
+to GPT-OSS 120B, benchmark fused vs unfused at the **serving level** on
+**vLLM** (Workstream A) and **SGLang** (Workstream B).
 
-Full plan: `plan.md` (phases, gate counters, benchmark matrix, risks).
+**Checkpoints:**
+- Transform + kernel benchmark: `unsloth/gpt-oss-120b-BF16` (~234 GB, fully BF16)
+- Serving benchmark: `openai/gpt-oss-120b` (~63 GB, MXFP4 + BF16-path fused)
+
+Detailed plans: `plan_vllm.md`, `plan_sglang.md` (supersede `plan.md` for
+hardware, protocol, and milestone ordering).
 Architecture decisions log: `DECISIONS.md` — append, never rewrite history.
 
 ## Critical technical constraints
@@ -23,10 +27,11 @@ Architecture decisions log: `DECISIONS.md` — append, never rewrite history.
    bf16_transformed=109, norms_reset=37, post_attn norms untouched=36,
    mxfp4_transformed=0. (Re-derive from `inspect_report.md` if the live model
    disagrees with plan.md.)
-3. **A pure weight transform gives ~0 serving speedup** — vLLM/SGLang still run
-   the RMSNorm kernel with weight=1. Stage A = drop-in checkpoint (correctness
-   + null run). Stage B = patch the framework's gpt_oss model file with a
-   weight-free norm path, flag-gated. Don't conflate the two in results.
+3. **4-step experimental protocol (per plan_vllm.md / plan_sglang.md):**
+   (1) vanilla baseline via HF transformers, (2) fused via HF transformers —
+   steps 1–2 shared across both workstreams, run once. (3) engine on vanilla,
+   (4) engine + algorithm (treatment). Do not conflate kernel-level and
+   serving-level results.
 4. **Never load the full model with AutoModelForCausalLM for weight
    transforms.** Direct safetensors I/O only. Inspection uses headers only
    (`inspect_model.py`).
@@ -42,18 +47,22 @@ Architecture decisions log: `DECISIONS.md` — append, never rewrite history.
   lesson: names never carry over).
 - Push to GitHub at every phase boundary. Remotes: `origin` =
   hemoxiChloride/gpt-oss-120b-fusion, `runaraai` = Runaraai org mirror.
-- GPU work runs on the cloud instance (H100 80GB primary, A100 fallback —
-  never mix results between the two). Stop instances when idle.
+- GPU work runs on Vast.ai cloud instances. **Run and report on both H100 80GB
+  and A100 80GB.** Results are ALWAYS in separate tables — never mixed.
+  Stop instances when idle.
 - Yellow/red blockers → engineering Slack channel immediately (team policy,
   June 9 standup).
 
 ## Phase status (update as you go)
 
 - [x] Phase 1: provision + `inspect_model.py` run + reconcile vs plan.md
-- [ ] Phase 2: `src/fuse.py` port + unit tests + fused checkpoint upload
-      (code + 7/7 tests + verify_fused.py DONE; real transform + upload
-      BLOCKED on local disk — see DECISIONS.md 2026-06-10 blocker entry)
-- [ ] Phase 3: correctness (cos sim / max|Δ| / KL + small eval)
-- [ ] Phase 4: vLLM — control / Stage A / Stage B benchmark matrix
-- [ ] Phase 5: SGLang — same matrix
-- [ ] Phase 6: report (fairness section first), PDF + Slack to Ben/Itamar
+- [ ] Phase 2: `src/fuse.py` + unit tests + real transform + upload
+      (code + 7/7 tests + verify_fused.py DONE locally; transform runs on
+      Vast.ai against unsloth/gpt-oss-120b-BF16 — see DECISIONS.md)
+      Milestones: download BF16 upcast → fuse (109/37/0) → verify_fused.py
+      9/9 → upload hchitte/gpt-oss-120b-fused (private)
+- [ ] Phase 3: correctness — cos sim ≥ 0.999, KL ≈ 0, 50 harmony prompts
+- [ ] Phase 4: kernel benchmark — Itamar script, raw CSV, H100 + A100
+- [ ] Phase 5: vLLM 4-step benchmark matrix — H100 + A100 (separate tables)
+- [ ] Phase 6: SGLang 4-step benchmark matrix — H100 + A100 (separate tables)
+- [ ] Phase 7: report + Confluence + Slack to Ben/Itamar
