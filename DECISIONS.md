@@ -172,5 +172,46 @@ Two changes introduced. Old entries above remain as historical record.
 
 ### What did NOT change
 
-Fusion scope, gate counters (109/37/36/0), fuse.py algorithm, verify_fused.py,
+Fusion scope, gate counters (109/37/36/0), fuse.py algorithm,
 all existing unit tests, correctness gate (cos_sim ≥ 0.999, KL ≈ 0).
+
+Note: verify_fused.py updated to auto-detect checkpoint type (BF16 upcast vs
+MXFP4 original) — blocks/scales check replaced with BF16 expert weight
+bit-identity check when running against the BF16 upcast. See commit be31886.
+
+---
+
+## 2026-06-12 — Phase 2 complete: real transform verified on Vast.ai H100 instance
+
+### fuse.py run
+- Source: `unsloth/gpt-oss-120b-BF16` (73 shards, ~234 GB) at `/workspace/gpt-oss-120b-BF16`
+- Output: `/workspace/gpt-oss-120b-BF16-fused`
+- Log: `/workspace/fuse_run.log`
+
+Gate counter table (exact — no deviations):
+
+| counter | expected | actual | status |
+|---|---|---|---|
+| bf16_transformed | 109 | 109 | OK |
+| norms_reset | 37 | 37 | OK |
+| post_attn_norms_untouched | 36 | 36 | OK |
+| mxfp4_transformed | 0 | 0 | OK |
+
+### verify_fused.py run (v2, BF16 upcast path, 8 checks)
+```
+Checkpoint type: BF16 upcast
+
+PASS  input_layernorm == ones in fused
+PASS  q_proj.weight differs from original
+PASS  q_proj.bias bit-identical
+PASS  post_attention_layernorm bit-identical
+PASS  sinks bit-identical
+PASS  expert gate_up_proj.weight bit-identical (BF16 upcast, post_attn excluded)
+PASS  lm_head.weight differs from original
+PASS  model.norm.weight == ones in fused
+
+8/8 checks passed.
+```
+
+Next: upload fused checkpoint to `hchitte/gpt-oss-120b-fused` (PRIVATE), then
+Phase 3 correctness validation (cos_sim / KL on 50 harmony-format prompts).

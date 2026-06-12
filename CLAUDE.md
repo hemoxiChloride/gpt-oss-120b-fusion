@@ -56,11 +56,9 @@ Architecture decisions log: `DECISIONS.md` — append, never rewrite history.
 ## Phase status (update as you go)
 
 - [x] Phase 1: provision + `inspect_model.py` run + reconcile vs plan.md
-- [ ] Phase 2: `src/fuse.py` + unit tests + real transform + upload
-      (code + 7/7 tests + verify_fused.py DONE locally; transform runs on
-      Vast.ai against unsloth/gpt-oss-120b-BF16 — see DECISIONS.md)
-      Milestones: download BF16 upcast → fuse (109/37/0) → verify_fused.py
-      9/9 → upload hchitte/gpt-oss-120b-fused (private)
+- [x] Phase 2: `src/fuse.py` + unit tests + real transform + verify
+      Gate counters 109/37/36/0 exact; verify_fused.py 8/8 PASS (BF16 upcast).
+      Upload to hchitte/gpt-oss-120b-fused (private) — pending this session.
 - [ ] Phase 3: correctness — cos sim ≥ 0.999, KL ≈ 0, 50 harmony prompts
 - [ ] Phase 4: kernel benchmark — Itamar script, raw CSV, H100 + A100
 - [ ] Phase 5: vLLM 4-step benchmark matrix — H100 + A100 (separate tables)
