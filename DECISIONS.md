@@ -213,5 +213,9 @@ PASS  model.norm.weight == ones in fused
 8/8 checks passed.
 ```
 
-Next: upload fused checkpoint to `hchitte/gpt-oss-120b-fused` (PRIVATE), then
-Phase 3 correctness validation (cos_sim / KL on 50 harmony-format prompts).
+### Upload
+- Repo: https://huggingface.co/hchitte/gpt-oss-120b-fused (public)
+- Commit: 5b29a3fd64eb83a67592547e2eb01a759335c8c7
+- 74 files, 234 GB, uploaded at ~2.74 GB/s read / 81.5 MB/s net
+
+Next: Phase 3 correctness validation (cos_sim / KL on 50 harmony-format prompts).

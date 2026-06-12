@@ -21,3 +21,4 @@ Format: `[PASS/FAIL] <function_name> — <timestamp> — <notes>`
 [FAIL]    verify_fused.py v1 on BF16 upcast       — 2026-06-12T18:45:00Z — 7/9: FAIL on gate_up_proj_blocks/scales (KeyError) — expected: BF16 upcast has no MXFP4 tensors. Script was written for MXFP4 original only. Fixed in v2 (see below).
 [PASS]    verify_fused.py v2 (auto-detect ckpt)   — 2026-06-12T18:50:00Z — BF16 upcast path: 8/8 (replaces blocks/scales check with gate_up_proj.weight bit-identity); MXFP4 path: 9/9. Both synthetic pairs pass locally.
 [PASS]    verify_fused.py v2 on real BF16 upcast  — 2026-06-12T18:55:00Z — 8/8 on /workspace/gpt-oss-120b-BF16 vs /workspace/gpt-oss-120b-BF16-fused. All invariants hold. Phase 2 complete.
+[PASS]    upload hchitte/gpt-oss-120b-fused       — 2026-06-12T19:10:00Z — 74 files, 234 GB. HF commit 5b29a3fd. URL: https://huggingface.co/hchitte/gpt-oss-120b-fused
