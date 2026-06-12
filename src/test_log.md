@@ -25,3 +25,9 @@ Format: `[PASS/FAIL] <function_name> — <timestamp> — <notes>`
 [PASS]    phase3_correctness.py smoke test        — 2026-06-12T19:20:00Z — synthetic real-dim tensors (2880 hidden, 4096 out). cos_sim mean=0.99999866 min=0.99999827; max|diff| mean=0.006994; KL mean=1.59e-06. All 3 gates PASS. Script ready for real weights on instance.
 [PASS]    phase3_correctness.py REAL WEIGHTS      — 2026-06-12T19:30:00Z — orig=/workspace/gpt-oss-120b-BF16, fused=/workspace/gpt-oss-120b-BF16-fused, rms_norm_eps=1e-05, seed=42, n=50. cos_sim mean=0.99999866 min=0.99999833; max|diff| mean=0.052394; KL mean=3.36e-05. Spot checks: layer0 norm==ones PASS, layer17 norm==ones PASS, post_attn unchanged PASS. All 3 gates PASS. Phase 3 complete.
 [NOTE]    Phase 4 H100 kernel benchmark               — 2026-06-12T20:15:00Z — benchmark_rmsnorm_linear_fusion.py, layer=model.layers.0.self_attn.q_proj (self_attn errored: missing position_embeddings). 9 configs batch∈{1,8,32}×seq∈{128,512,2048}. Speedup 0.97x-1.01x (Stage A null, expected). cos_sim ~0.954 flagged (<0.99) — isolated q_proj without norm pairing, NOT a fusion bug; W·x vs (W×γ)·x on unnormalized input. Paired correctness: Phase 3 at 0.99999866. Raw CSV: results/h100_kernel_benchmark.csv.
+
+## fuse.py + verify_fused.py — MXFP4 run — 2026-06-12 (GCP H100)
+- src: /mnt/hemakshi/gpt-oss-120b
+- dst: /mnt/hemakshi/gpt-oss-120b-fused
+- Gate counters: bf16_transformed=109 ✅  norms_reset=37 ✅  post_attn_norms_untouched=36 ✅  mxfp4_transformed=0 ✅
+- verify_fused.py: 9/9 PASS (MXFP4 original path)
