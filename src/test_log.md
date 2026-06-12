@@ -22,3 +22,4 @@ Format: `[PASS/FAIL] <function_name> — <timestamp> — <notes>`
 [PASS]    verify_fused.py v2 (auto-detect ckpt)   — 2026-06-12T18:50:00Z — BF16 upcast path: 8/8 (replaces blocks/scales check with gate_up_proj.weight bit-identity); MXFP4 path: 9/9. Both synthetic pairs pass locally.
 [PASS]    verify_fused.py v2 on real BF16 upcast  — 2026-06-12T18:55:00Z — 8/8 on /workspace/gpt-oss-120b-BF16 vs /workspace/gpt-oss-120b-BF16-fused. All invariants hold. Phase 2 complete.
 [PASS]    upload hchitte/gpt-oss-120b-fused       — 2026-06-12T19:10:00Z — 74 files, 234 GB. HF commit 5b29a3fd. URL: https://huggingface.co/hchitte/gpt-oss-120b-fused
+[PASS]    phase3_correctness.py smoke test        — 2026-06-12T19:20:00Z — synthetic real-dim tensors (2880 hidden, 4096 out). cos_sim mean=0.99999866 min=0.99999827; max|diff| mean=0.006994; KL mean=1.59e-06. All 3 gates PASS. Script ready for real weights on instance.
