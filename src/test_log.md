@@ -17,3 +17,4 @@ Format: `[PASS/FAIL] <function_name> — <timestamp> — <notes>`
 [PASS] verify_fused.py (synthetic pair)          — 2026-06-10T06:05:00Z — 9/9 checks pass on synthetic orig/fused pair built via transform_shard
 [PASS] verify_fused.py (negative)                — 2026-06-10T06:05:00Z — unfused dir passed as --fused → 4 FAILs, exit 1, as required
 [BLOCKED] real 120B transform                    — 2026-06-10T06:06:00Z — disk gate FAILED on MacBook Air: 24 GB free, spec requires >=150 GB (63 in + 63 out + headroom). Download NOT started. Nothing deleted. Transform deferred — see DECISIONS.md.
+[PASS]    fuse.py real transform (BF16 upcast)    — 2026-06-12T18:32:00Z — src=unsloth/gpt-oss-120b-BF16 (73 shards, 234GB), dst=/workspace/gpt-oss-120b-BF16-fused. Gate counters: bf16_transformed=109 OK, norms_reset=37 OK, post_attn_norms_untouched=36 OK, mxfp4_transformed=0 OK. All gate counters match. Log: /workspace/fuse_run.log
