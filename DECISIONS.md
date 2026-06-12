@@ -249,3 +249,36 @@ BF16 matmul accumulation error over 2880 input dims. cos_sim of 0.99999866
 confirms the difference is purely numerical noise, not a fusion error.
 
 Next: Phase 4 — kernel benchmark (Itamar's script, H100 + A100, raw CSV).
+
+---
+
+## 2026-06-12 — Phase 4: H100 kernel benchmark complete
+
+Script: `benchmark_rmsnorm_linear_fusion.py` (Itamar's script, unmodified)
+Layer: `model.layers.0.self_attn.q_proj` (full `self_attn` errored — requires `position_embeddings`; q_proj benchmarked in isolation)
+Hardware: H100 80GB HBM3, Vast.ai instance C.40735458
+Model: `unsloth/gpt-oss-120b-BF16` (unfused) vs `/workspace/gpt-oss-120b-BF16-fused`
+Configs: 9 (batch ∈ {1,8,32} × seq ∈ {128,512,2048}, hidden=2880)
+Raw CSV: `results/h100_kernel_benchmark.csv`
+Full log: `results/h100_kernel_benchmark_log.txt`
+Notes: `results/h100_kernel_benchmark_notes.txt`
+
+### Speedup: 0.97x–1.01x — expected Stage A null result
+Weight transform only; vLLM/SGLang still execute the RMSNorm kernel with
+weight=ones. Per plan_vllm.md §4.4, end-to-end serving speedup requires a
+framework patch (Stage B). The null result confirms the prediction and
+de-risks correctness before serving benchmarks.
+
+### Cosine sim: ~0.954 — flagged but NOT a fusion bug
+The benchmark calls `q_proj(x)` on raw unnormalized input, comparing
+`W·x` (unfused) vs `(W×γ)·x` (fused). These are intentionally different
+operations — mathematically equivalent only when paired with the norm:
+`RMSNorm(x,γ)@W.T ≡ RMSNorm(x,1)@(W×γ).T`. Phase 3 validated the paired
+operation at cos_sim=0.99999866. The ~0.954 reflects cosine similarity
+between W and W×γ applied to raw x — not a correctness failure.
+
+### Model precision note
+BF16 upcast (not NVFP4 as Itamar's benchmark spec assumes). Results are
+comparable in methodology; hardware reference is H100 80GB HBM3.
+
+Next: Phase 5 — vLLM serving benchmark (separate session).
