@@ -59,7 +59,7 @@ Architecture decisions log: `DECISIONS.md` — append, never rewrite history.
 - [x] Phase 2: `src/fuse.py` + unit tests + real transform + verify + upload
       Gate counters 109/37/36/0 exact; verify_fused.py 8/8 PASS (BF16 upcast).
       Uploaded → https://huggingface.co/hchitte/gpt-oss-120b-fused (public)
-- [ ] Phase 3: correctness — cos sim ≥ 0.999, KL ≈ 0, 50 harmony prompts
+- [x] Phase 3: correctness — cos_sim mean=0.99999866 min=0.99999833, KL=3.36e-05. All gates PASS.
 - [ ] Phase 4: kernel benchmark — Itamar script, raw CSV, H100 + A100
 - [ ] Phase 5: vLLM 4-step benchmark matrix — H100 + A100 (separate tables)
 - [ ] Phase 6: SGLang 4-step benchmark matrix — H100 + A100 (separate tables)
