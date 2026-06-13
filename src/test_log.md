@@ -31,3 +31,17 @@ Format: `[PASS/FAIL] <function_name> — <timestamp> — <notes>`
 - dst: /mnt/hemakshi/gpt-oss-120b-fused
 - Gate counters: bf16_transformed=109 ✅  norms_reset=37 ✅  post_attn_norms_untouched=36 ✅  mxfp4_transformed=0 ✅
 - verify_fused.py: 9/9 PASS (MXFP4 original path)
+
+## vLLM H100 Serving Benchmark — 2026-06-13
+### VRAM (fused model, idle)
+- GPU 0: 78585 MiB / 81559 MiB (96.4%) — model weights ~64.67 GiB + KV cache ~12 GiB
+- GPUs 1-7: 4 MiB each (tp=1, unused)
+
+### KV-Cache
+- num_gpu_blocks: 12354 (block_size=16 → 197,664 tokens total capacity)
+- kv_cache_usage_perc at idle: 0.0
+- prefix_caching: enabled
+
+### Step 3 (unfused vLLM) + Step 4 (fused vLLM): 16 scenarios each, 0 failures
+- Stage A null result confirmed: fused ≈ unfused across all 16 scenarios
+- Results: results/bench_step3_unfused.txt + results/bench_step4_fused.txt
